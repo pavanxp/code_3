@@ -54,14 +54,16 @@ def _value(text):
     return text
 
 
-def read_mcap_metadata(stream) -> dict:
+def read_mcap_metadata(stream, raw: bool = False) -> dict:
     """{record name: {field: value}} for every metadata record in the file;
-    empty when the file has no index or no metadata records."""
+    empty when the file has no index or no metadata records. With raw=True
+    the values are exactly as stored in the file."""
     from mcap.reader import make_reader
     reader = make_reader(stream)
     if reader.get_summary() is None:
         return {}
     records = {}
     for record in reader.iter_metadata():
-        records.setdefault(record.name, {}).update({k: _value(v) for k, v in record.metadata.items()})
+        records.setdefault(record.name, {}).update(
+            {k: (v if raw else _value(v)) for k, v in record.metadata.items()})
     return records

@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from catalogue.config import METADATA_FIELDS, REQUIRED_FIELDS
 from catalogue.db import save_video
+from catalogue.mcapmeta import _value as clean_value
 from catalogue.mcapmeta import read_mcap_metadata
 from catalogue.versions import version_of
 from catalogue.metadata import MetadataError, add_catalogue_path, is_video, lookup, metadata_names, parse
@@ -29,11 +30,12 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
     meta_keys = [posixpath.join(folder, n) for n in metadata_names(video, names)]
 
     # an .mcap carries its metadata inside the file; it may have no file beside it
-    inside, mcap_problem = {}, None
+    inside, raw_inside, mcap_problem = {}, {}, None
     if video.lower().endswith(".mcap"):
         try:
             with storage.open(posixpath.join(folder, video)) as stream:
-                inside = read_mcap_metadata(stream)
+                raw_inside = read_mcap_metadata(stream, raw=True)
+            inside = {name: {k: clean_value(v) for k, v in rec.items()} for name, rec in raw_inside.items()}
         except Exception as e:
             mcap_problem = f"could not read the .mcap ({type(e).__name__})"
 
@@ -49,6 +51,12 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
         updated = {key: add_catalogue_path(key, data, video_path) for key, data in contents.items()}
     except MetadataError as e:
         return video_path, str(e), []
+    # the full metadata as found: the metadata files' contents, then the
+    # .mcap's own records under their record names
+    source_metadata = {}
+    for doc in parsed:
+        source_metadata.update(doc)
+    source_metadata.update(raw_inside)
     if inside:
         parsed.append(inside)
 
@@ -64,6 +72,7 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
         # an .mcap whose metadata says nothing about the device
         fields.setdefault("device_type", "")
         fields.setdefault("device_model", "")
+    fields["source_metadata"] = source_metadata
     missing = [f for f in REQUIRED_FIELDS if f not in fields]
     if missing:
         return video_path, " and ".join(missing) + " not present in the metadata", []
@@ -76,7 +85,8 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
             lines.append(f"    metadata {storage.full_path(key)}: {state}")
         if inside:
             lines.append("    metadata read from inside the .mcap (the .mcap itself is not changed)")
-        lines.append(f"    DB fields: {fields}")
+        shown = {**fields, "source_metadata": f"<full metadata, {len(source_metadata)} top-level field(s)>"}
+        lines.append(f"    DB fields: {shown}")
         return video_path, None, lines
     for key in changed:
         storage.write(key, updated[key])

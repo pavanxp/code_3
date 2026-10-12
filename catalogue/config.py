@@ -6,16 +6,17 @@ from typing import Mapping
 # DB field -> the metadata field names it is read from, first one present wins.
 # The names after the DB field's own come from the owner's sample metadata.
 FIELD_NAMES = {
-    "task_name": ["task_name", "task_description"],
-    "task_difficulty": ["task_difficulty"],
-    "l1": ["l1", "environment_l1"],
+    "task_name": ["task_name", "task_description", "task-id"],
+    "task_difficulty": ["task_difficulty", "difficulty"],
+    "l1": ["l1", "environment_l1", "L1"],
     "device_model": ["device_model", "device_generation"],
-    "task_category": ["task_category", "skill_group"],
+    "task_category": ["task_category", "skill_group", "category"],
     "device_type": ["device_type"],
 }
 # DB fields filled from the metadata, and the two that must be present
 METADATA_FIELDS = tuple(FIELD_NAMES)
-REQUIRED_FIELDS = ("task_category", "device_type")
+# device_type is written when present; the MCAP session-metadata format has none
+REQUIRED_FIELDS = ("task_category",)
 
 
 class ConfigError(Exception):

@@ -51,12 +51,13 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
         updated = {key: add_catalogue_path(key, data, video_path) for key, data in contents.items()}
     except MetadataError as e:
         return video_path, str(e), []
-    # the full metadata as found: the metadata files' contents, then the
-    # .mcap's own records under their record names
+    # the full metadata as found, its fields directly under source_metadata:
+    # the metadata files' contents, then the fields of the .mcap's own records
     source_metadata = {}
     for doc in parsed:
         source_metadata.update(doc)
-    source_metadata.update(raw_inside)
+    for record in raw_inside.values():
+        source_metadata.update(record)
     if inside:
         parsed.append(inside)
 

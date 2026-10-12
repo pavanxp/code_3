@@ -1,0 +1,3 @@
+pymongo
+azure-storage-blob
+boto3

@@ -53,7 +53,7 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
         parsed.append(inside)
 
     # checked before anything is written: a failing video is left untouched
-    fields = {"file_name": video, "path": video_path}
+    fields = {"file_name": video, "path": video_path, "contractor_name": settings.contractor_name}
     for db_field in METADATA_FIELDS:
         for doc in parsed:
             value = lookup(doc, settings.field_names[db_field])
@@ -62,7 +62,7 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
                 break
     if video.lower().endswith(".mcap"):
         # an .mcap whose metadata says nothing about the device
-        fields.setdefault("device_type", "mcap")
+        fields.setdefault("device_type", "")
         fields.setdefault("device_model", "")
     missing = [f for f in REQUIRED_FIELDS if f not in fields]
     if missing:

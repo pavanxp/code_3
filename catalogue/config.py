@@ -37,6 +37,7 @@ class Settings:
     db_name: str = ""
     db_collection: str = ""
     video_id_prefix: str = "VID"
+    contractor_name: str = ""
     field_names: dict = field(default_factory=dict)
 
 
@@ -84,5 +85,6 @@ def load_settings(env: Mapping[str, str]) -> Settings:
         db_name=get("DB_NAME"),
         db_collection=get("DB_COLLECTION"),
         video_id_prefix=prefix,
+        contractor_name=get("CONTRACTOR_NAME"),
         field_names={k: list(v) for k, v in FIELD_NAMES.items()},
     )

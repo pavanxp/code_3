@@ -5,6 +5,8 @@ File keys are relative to the working directory and use "/"."""
 import os
 import tempfile
 
+from catalogue.mcapmeta import remote_stream
+
 
 def _mount_point(path: str) -> str:
     while not os.path.ismount(path):
@@ -47,6 +49,9 @@ class LocalStorage:
         with open(self._real(key), "rb") as f:
             return f.read()
 
+    def open(self, key: str):
+        return open(self._real(key), "rb")
+
     def write(self, key: str, data: bytes) -> None:
         # written beside the file and swapped in, so a crash never leaves half a file
         path = self._real(key)
@@ -83,6 +88,12 @@ class AzureStorage:
     def read(self, key: str) -> bytes:
         return self.client.download_blob(self.prefix + key).readall()
 
+    def open(self, key: str):
+        name = self.prefix + key
+        size = self.client.get_blob_client(name).get_blob_properties().size
+        return remote_stream(size, lambda offset, length: self.client.download_blob(
+            name, offset=offset, length=length).readall())
+
     def write(self, key: str, data: bytes) -> None:
         self.client.upload_blob(self.prefix + key, data, overwrite=True)
 
@@ -107,6 +118,12 @@ class S3Storage:
 
     def read(self, key: str) -> bytes:
         return self.client.get_object(Bucket=self.bucket, Key=self.prefix + key)["Body"].read()
+
+    def open(self, key: str):
+        name = self.prefix + key
+        size = self.client.head_object(Bucket=self.bucket, Key=name)["ContentLength"]
+        return remote_stream(size, lambda offset, length: self.client.get_object(
+            Bucket=self.bucket, Key=name, Range=f"bytes={offset}-{offset + length - 1}")["Body"].read())
 
     def write(self, key: str, data: bytes) -> None:
         self.client.put_object(Bucket=self.bucket, Key=self.prefix + key, Body=data)

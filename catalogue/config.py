@@ -3,8 +3,18 @@ import re
 from dataclasses import dataclass, field
 from typing import Mapping
 
+# DB field -> the metadata field names it is read from, first one present wins.
+# The names after the DB field's own come from the owner's sample metadata.
+FIELD_NAMES = {
+    "task_name": ["task_name", "task_description"],
+    "task_difficulty": ["task_difficulty"],
+    "l1": ["l1", "environment_l1"],
+    "device_model": ["device_model", "device_generation"],
+    "task_category": ["task_category", "skill_group"],
+    "device_type": ["device_type"],
+}
 # DB fields filled from the metadata, and the two that must be present
-METADATA_FIELDS = ("task_name", "task_difficulty", "l1", "device_model", "task_category", "device_type")
+METADATA_FIELDS = tuple(FIELD_NAMES)
 REQUIRED_FIELDS = ("task_category", "device_type")
 
 
@@ -60,10 +70,6 @@ def load_settings(env: Mapping[str, str]) -> Settings:
     prefix = get("VIDEO_ID_PREFIX", "VID")
     if not re.fullmatch(r"[A-Za-z0-9]{0,11}", prefix):
         raise ConfigError("VIDEO_ID_PREFIX must be letters and digits only, 11 characters at most")
-    names = {}
-    for db_field in METADATA_FIELDS:
-        listed = [n.strip() for n in get(f"META_{db_field.upper()}_FIELDS").split(",") if n.strip()]
-        names[db_field] = listed or [db_field]
     return Settings(
         catalogue_dir=catalogue_dir,
         source_type=source_type,
@@ -77,5 +83,5 @@ def load_settings(env: Mapping[str, str]) -> Settings:
         db_name=get("DB_NAME"),
         db_collection=get("DB_COLLECTION"),
         video_id_prefix=prefix,
-        field_names=names,
+        field_names={k: list(v) for k, v in FIELD_NAMES.items()},
     )

@@ -60,6 +60,10 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
             if value is not None:
                 fields[db_field] = value
                 break
+    if video.lower().endswith(".mcap"):
+        # an .mcap whose metadata says nothing about the device
+        fields.setdefault("device_type", "mcap")
+        fields.setdefault("device_model", "")
     missing = [f for f in REQUIRED_FIELDS if f not in fields]
     if missing:
         return video_path, " and ".join(missing) + " not present in the metadata", []
@@ -83,7 +87,7 @@ def _process(storage, settings, collection, apply, db_lock, folder, names, video
 
 
 def run(storage, settings, *, collection=None, apply: bool = False, out=print, skipped_dir: str = ".",
-        workers: int | None = None):
+        workers: int | None = None, limit: int | None = None):
     """Returns (number of videos done, [(video path, reason skipped)]).
     Videos are worked on in parallel, one worker per CPU core by default."""
     by_dir: dict[str, list[str]] = {}
@@ -102,7 +106,10 @@ def run(storage, settings, *, collection=None, apply: bool = False, out=print, s
         jobs += [(folder, names, video) for video in videos]
 
     workers = workers or os.cpu_count() or 1
-    out(f"{len(jobs)} video(s) found, working with {workers} worker(s)")
+    found = len(jobs)
+    if limit is not None:
+        jobs = jobs[:limit]
+    out(f"{found} video(s) found, working on {len(jobs)} with {workers} worker(s)")
     db_lock = threading.Lock()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         results = pool.map(lambda job: _process(storage, settings, collection, apply, db_lock, *job), jobs)

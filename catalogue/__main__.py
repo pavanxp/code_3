@@ -1,5 +1,6 @@
 """python -m catalogue           show what would be changed, write nothing
-python -m catalogue --apply   update the metadata at the source and the DB"""
+python -m catalogue --apply   update the metadata at the source and the DB
+python -m catalogue --limit N   work on only the first N videos found"""
 import argparse
 import sys
 
@@ -27,7 +28,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="python -m catalogue", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--apply", action="store_true", help="write the changes (without it nothing is written)")
+    parser.add_argument("--limit", type=int, metavar="N", help="work on only the first N videos found")
     args = parser.parse_args(argv)
+    if args.limit is not None and args.limit < 1:
+        parser.error("--limit must be 1 or more")
     try:
         settings = load_settings(read_env_file(".env"))
         storage = make_storage(settings)
@@ -38,7 +42,7 @@ def main(argv=None) -> int:
     if not args.apply:
         print("DRY RUN: nothing is written. Run again with --apply to write.\n")
     try:
-        run(storage, settings, collection=collection, apply=args.apply)
+        run(storage, settings, collection=collection, apply=args.apply, limit=args.limit)
     except FileNotFoundError as e:
         print(f"cannot start: {e}")
         return 2

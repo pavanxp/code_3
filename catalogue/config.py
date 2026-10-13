@@ -11,7 +11,7 @@ FIELD_NAMES = {
     "l1": ["l1", "environment_l1", "L1"],
     "l2": ["l2", "environment_l2", "L2"],
     "l3": ["l3", "environment_l3", "L3"],
-    "environment": ["environment"],
+    "environment": ["environment", "environment-id", "environment_id"],
     "device_model": ["device_model", "device_generation"],
     "task_category": ["task_category", "skill_group", "category"],
     "device_type": ["device_type"],

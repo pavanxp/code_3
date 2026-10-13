@@ -6,6 +6,9 @@ VERSIONS = {
     "v1": (".aac", ".json", ".mp4", ".txt"),
     # e.g. a01524-H-0147.aac / .metadata.json / .mp4 / .txt in one folder
     "v2": (".aac", ".metadata.json", ".mp4", ".txt"),
+    # e.g. sessions/stereo_<date>/chunk_000000/: video.h265 + metadata.json,
+    # meta.json, calibration.json, frames.idx, imu.imu, imu.raw, stereo_calibration.bin
+    "v3": (".bin", ".h265", ".idx", ".imu", ".json", ".raw"),
 }
 
 

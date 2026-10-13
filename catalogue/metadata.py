@@ -3,7 +3,7 @@ catalogue_path to it. Metadata is a .json or .txt file with the video's name."""
 import json
 import re
 
-VIDEO_EXTS = (".mp4", ".mcap", ".mov")
+VIDEO_EXTS = (".mp4", ".mcap", ".mov", ".h265")
 METADATA_EXTS = (".json", ".txt")
 PATH_FIELD = "catalogue_path"
 
@@ -29,6 +29,12 @@ def metadata_names(video_name: str, names_in_dir: list[str]) -> list[str]:
     found = sorted(n for n in names_in_dir if n.lower() in dedicated)
     if found:
         return found
+    # a folder holding one video with differently named files, e.g.
+    # video.h265 + metadata.json: that metadata.json is the video's metadata
+    if sum(is_video(n) for n in names_in_dir) == 1:
+        shared = [n for n in names_in_dir if n.lower() == "metadata.json"]
+        if shared and not any(n.lower().startswith(stem + ".") and not is_video(n) for n in names_in_dir):
+            return shared
     wanted = set()
     for ext in METADATA_EXTS:
         wanted |= {stem + ext, stem + ".metadata" + ext, video_name.lower() + ".metadata" + ext}

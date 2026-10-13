@@ -23,6 +23,12 @@ def metadata_names(video_name: str, names_in_dir: list[str]) -> list[str]:
     """The files in the video's directory that are its metadata: the video's
     name with a .json or .txt extension (also <name>.metadata.<ext>)."""
     stem = video_name.rsplit(".", 1)[0].lower()
+    # where <name>.metadata.json exists, it alone is the metadata; the other
+    # files beside it (e.g. a .txt) are left untouched
+    dedicated = {stem + ".metadata.json", video_name.lower() + ".metadata.json"}
+    found = sorted(n for n in names_in_dir if n.lower() in dedicated)
+    if found:
+        return found
     wanted = set()
     for ext in METADATA_EXTS:
         wanted |= {stem + ext, stem + ".metadata" + ext, video_name.lower() + ".metadata" + ext}

@@ -4,12 +4,17 @@ together in one directory. A new structure is added here with the next name."""
 VERSIONS = {
     # e.g. xphirobotics-000002-027.aac / .json / .mp4 / .txt in one folder
     "v1": (".aac", ".json", ".mp4", ".txt"),
+    # e.g. a01524-H-0147.aac / .metadata.json / .mp4 / .txt in one folder
+    "v2": (".aac", ".metadata.json", ".mp4", ".txt"),
 }
 
 
 def formats_of(names: list[str]) -> tuple[str, ...]:
     exts = set()
     for name in names:
+        if name.lower().endswith(".metadata.json"):
+            exts.add(".metadata.json")
+            continue
         dot = name.rfind(".")
         exts.add(name[dot:].lower() if dot > 0 else "(none)")
     return tuple(sorted(exts))
